@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Contatore Salti Corda</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .icon {
+            width: 35px;
+            height: 35px;
+            background: #2563eb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .setup-screen, .workout-screen {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .setup-screen.active, .workout-screen.active {
+            display: flex;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #334155;
+            background: #1e293b;
+            color: #94a3b8;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:active {
+            transform: scale(0.95);
+        }
+
+        .mode-btn.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input {
+            padding: 15px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #fff;
+        }
+
+        .workout-display {
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px 0;
+        }
+
+        .status-message {
+            font-size: 24px;
+            font-weight: 700;
+            padding: 20px;
+            border-radius: 16px;
+            background: rgba(37, 99, 235, 0.2);
+            border: 2px solid #2563eb;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .status-message.rest {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+
+        .status-message.complete {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .jump-counter {
+            font-size: 96px;
+            font-weight: 900;
+            color: #60a5fa;
+            text-shadow: 0 0 30px rgba(96, 165, 250, 0.6);
+            line-height: 1;
+            animation: jumpPulse 0.3s ease-out;
+        }
+
+        @keyframes jumpPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .jump-counter.animate {
+            animation: jumpPulse 0.3s ease-out;
+        }
+
+        .timer {
+            font-size: 56px;
+            font-weight: 700;
+            color: #94a3b8;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .set-info {
+            font-size: 22px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sensor-status {
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            font-size: 14px;
+            text-align: center;
+            color: #fca5a5;
+            font-weight: 600;
+        }
+
+        .sensor-status.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+            color: #86efac;
+        }
+
+        .debug-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(100, 116, 139, 0.2);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #cbd5e1;
+            text-align: left;
+        }
+
+        .motion-indicator {
+            width: 100%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .motion-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #60a5fa);
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .calibrate-btn {
+            margin-top: 10px;
+            padding: 12px;
+            background: #475569;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #2563eb;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-prompt button {
+            background: #fff;
+            color: #2563eb;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 22px;
+            }
+            .jump-counter {
+                font-size: 72px;
+            }
+            .timer {
+                font-size: 42px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <div class="icon">🏃</div>
+            Contatore Salti Corda
+        </h1>
+
+        <div class="setup-screen active">
+            <div class="input-group">
+                <button class="btn btn-primary" id="test-sensors-btn" style="background: #7c3aed;">
+                    🔬 Test Sensori (INIZIA DA QUI)
+                </button>
+            </div>
+            
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="time">⏱️ A Tempo</button>
+                <button class="mode-btn" data-mode="jumps">🎯 A Salti</button>
+            </div>
+
+            <div class="input-group">
+                <label id="goal-label">Durata (secondi)</label>
+                <input type="number" id="goal-input" value="60" min="1" inputmode="numeric">
+            </div>
+
+            <div class="input-group">
+                <label>Numero di Serie</label>
+                <input type="number" id="sets-input" value="3" min="1" inputmode="numeric">
+            </div>
+
+            <div class="input-group">
+                <label>Pausa tra Serie (secondi)</label>
+                <input type="number" id="rest-input" value="30" min="0" inputmode="numeric">
+            </div>
+
+            <button class="btn btn-primary" id="start-btn">Inizia Allenamento</button>
+        </div>
+
+        <div class="workout-screen">
+            <div class="sensor-status" id="sensor-status">
+                ⏳ Attivazione sensori...
+            </div>
+            
+            <div class="debug-info" id="debug-info">
+                Accelerazione: -- | Soglia: 15 | Ultimo salto: --
+            </div>
+            
+            <div class="motion-indicator">
+                <div class="motion-bar" id="motion-bar"></div>
+            </div>
+            
+            <button class="calibrate-btn" id="calibrate-btn">🎯 Calibra Sensibilità</button>
+
+            <div class="workout-display">
+                <div class="status-message" id="status-msg">PRONTO</div>
+                
+                <div class="set-info" id="set-info">Serie 1 di 3</div>
+                
+                <div class="jump-counter" id="jump-counter">0</div>
+                
+                <div class="timer" id="timer">00:00</div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-secondary" id="stop-btn" style="flex: 1">🛑 Termina</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="install-prompt" id="install-prompt">
+        <span>📲 Installa l'app per un accesso rapido!</span>
+        <button id="install-btn">Installa</button>
+    </div>
+
+    <script>
+        let mode = 'time';
+        let goalValue = 60;
+        let totalSets = 3;
+        let restDuration = 30;
+        let currentSet = 1;
+        let jumps = 0;
+        let isWorkout = false;
+        let isResting = false;
+        let startTime = 0;
+        let timerInterval = null;
+        let lastAcceleration = 0;
+        let lastJumpTime = 0;
+        let jumpThreshold = 15;
+        let minJumpInterval = 300;
+        let deferredPrompt;
+        let maxAcceleration = 0;
+        let calibrationMode = false;
+
+        const setupScreen = document.querySelector('.setup-screen');
+        const workoutScreen = document.querySelector('.workout-screen');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const goalLabel = document.getElementById('goal-label');
+        const goalInput = document.getElementById('goal-input');
+        const setsInput = document.getElementById('sets-input');
+        const restInput = document.getElementById('rest-input');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const statusMsg = document.getElementById('status-msg');
+        const setInfo = document.getElementById('set-info');
+        const jumpCounter = document.getElementById('jump-counter');
+        const timerDisplay = document.getElementById('timer');
+        const sensorStatus = document.getElementById('sensor-status');
+        const installPrompt = document.getElementById('install-prompt');
+        const installBtn = document.getElementById('install-btn');
+        const debugInfo = document.getElementById('debug-info');
+        const motionBar = document.getElementById('motion-bar');
+        const calibrateBtn = document.getElementById('calibrate-btn');
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.classList.add('show');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installPrompt.classList.remove('show');
+        });
+
+        // Calibration
+        calibrateBtn.addEventListener('click', () => {
+            if (!calibrationMode) {
+                calibrationMode = true;
+                calibrateBtn.textContent = '⏹️ Stop Calibrazione';
+                calibrateBtn.style.background = '#dc2626';
+                maxAcceleration = 0;
+                alert('Fai 5-10 salti normali per calibrare la sensibilità. Poi premi Stop.');
+            } else {
+                calibrationMode = false;
+                calibrateBtn.textContent = '🎯 Calibra Sensibilità';
+                calibrateBtn.style.background = '#475569';
+                if (maxAcceleration > 0) {
+                    jumpThreshold = maxAcceleration * 0.6;
+                    alert(`✅ Calibrazione completata!\nNuova soglia: ${jumpThreshold.toFixed(1)}`);
+                }
+            }
+        });
+
+        // Mode selection
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+                
+                if (mode === 'time') {
+                    goalLabel.textContent = 'Durata (secondi)';
+                    goalInput.value = 60;
+                } else {
+                    goalLabel.textContent = 'Numero di Salti';
+                    goalInput.value = 100;
+                }
+            });
+        });
+
+        startBtn.addEventListener('click', () => {
+            goalValue = parseInt(goalInput.value);
+            totalSets = parseInt(setsInput.value);
+            restDuration = parseInt(restInput.value);
+            
+            if (goalValue < 1 || totalSets < 1) {
+                alert('⚠️ Inserisci valori validi!');
+                return;
+            }
+
+            setupScreen.classList.remove('active');
+            workoutScreen.classList.add('active');
+            requestSensorPermission();
+        });
+
+        async function requestSensorPermission() {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceMotionEvent.requestPermission();
+                    if (permission === 'granted') {
+                        startSensors();
+                    } else {
+                        sensorStatus.textContent = '❌ Permesso sensori negato';
+                        setTimeout(() => {
+                            alert('Per usare l\'app devi autorizzare l\'accesso ai sensori del movimento.');
+                            resetWorkout();
+                        }, 1000);
+                    }
+                } catch (error) {
+                    sensorStatus.textContent = '❌ Errore permessi';
+                    setTimeout(resetWorkout, 2000);
+                }
+            } else {
+                startSensors();
+            }
+        }
+
+        function startSensors() {
+            window.addEventListener('devicemotion', handleMotion);
+            sensorStatus.classList.add('active');
+            sensorStatus.textContent = '✅ Sensori attivi - Pronto!';
+            
+            setTimeout(() => {
+                startSet();
+            }, 1500);
+        }
+
+        function handleMotion(e) {
+            const acc = e.accelerationIncludingGravity;
+            if (!acc) return;
+
+            // Calcola accelerazione totale (magnitudine del vettore)
+            const x = acc.x || 0;
+            const y = acc.y || 0;
+            const z = acc.z || 0;
+            const totalAcceleration = Math.sqrt(x*x + y*y + z*z);
+            
+            // Calcola il cambiamento di accelerazione
+            const deltaAcceleration = Math.abs(totalAcceleration - lastAcceleration);
+            lastAcceleration = totalAcceleration;
+
+            // Aggiorna indicatore visivo
+            const barWidth = Math.min(100, (deltaAcceleration / jumpThreshold) * 100);
+            motionBar.style.width = barWidth + '%';
+
+            // Aggiorna debug info
+            const timeSinceJump = lastJumpTime > 0 ? ((Date.now() - lastJumpTime) / 1000).toFixed(1) + 's' : '--';
+            debugInfo.textContent = `Acc: ${deltaAcceleration.toFixed(1)} | Soglia: ${jumpThreshold.toFixed(1)} | Ultimo: ${timeSinceJump}`;
+
+            // Calibrazione
+            if (calibrationMode) {
+                if (deltaAcceleration > maxAcceleration) {
+                    maxAcceleration = deltaAcceleration;
+                }
+                return;
+            }
+
+            // Rilevamento salti durante workout
+            if (!isWorkout || isResting) return;
+
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastJumpTime;
+
+            // Rileva salto se supera soglia e è passato abbastanza tempo
+            if (deltaAcceleration > jumpThreshold && timeDiff > minJumpInterval) {
+                registerJump();
+                lastJumpTime = currentTime;
+            }
+        }
+
+        function registerJump() {
+            jumps++;
+            jumpCounter.textContent = jumps;
+            jumpCounter.classList.remove('animate');
+            void jumpCounter.offsetWidth;
+            jumpCounter.classList.add('animate');
+
+            if (mode === 'jumps' && jumps >= goalValue) {
+                endSet();
+            }
+        }
+
+        function startSet() {
+            isWorkout = true;
+            isResting = false;
+            jumps = 0;
+            startTime = Date.now();
+            
+            statusMsg.textContent = '🏃 SALTA!';
+            statusMsg.classList.remove('rest', 'complete');
+            setInfo.textContent = `Serie ${currentSet} di ${totalSets}`;
+            jumpCounter.textContent = '0';
+            
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function updateTimer() {
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            
+            if (mode === 'time') {
+                const remaining = Math.max(0, goalValue - elapsedTime);
+                timerDisplay.textContent = formatTime(remaining);
+                
+                if (remaining === 0) {
+                    endSet();
+                }
+            } else {
+                timerDisplay.textContent = formatTime(elapsedTime);
+            }
+        }
+
+        function endSet() {
+            isWorkout = false;
+            clearInterval(timerInterval);
+            
+            if (currentSet < totalSets) {
+                startRest();
+            } else {
+                endWorkout();
+            }
+        }
+
+        function startRest() {
+            isResting = true;
+            statusMsg.textContent = '😮‍💨 RIPOSO';
+            statusMsg.classList.add('rest');
+            
+            let restRemaining = restDuration;
+            timerDisplay.textContent = formatTime(restRemaining);
+            
+            const restInterval = setInterval(() => {
+                restRemaining--;
+                timerDisplay.textContent = formatTime(restRemaining);
+                
+                if (restRemaining <= 0) {
+                    clearInterval(restInterval);
+                    currentSet++;
+                    startSet();
+                }
+            }, 1000);
+        }
+
+        function endWorkout() {
+            statusMsg.textContent = '🎉 COMPLETATO!';
+            statusMsg.classList.remove('rest');
+            statusMsg.classList.add('complete');
+            
+            setTimeout(() => {
+                resetWorkout();
+            }, 4000);
+        }
+
+        stopBtn.addEventListener('click', () => {
+            if (confirm('Vuoi terminare l\'allenamento?')) {
+                resetWorkout();
+            }
+        });
+
+        function resetWorkout() {
+            isWorkout = false;
+            isResting = false;
+            clearInterval(timerInterval);
+            window.removeEventListener('devicemotion', handleMotion);
+            
+            currentSet = 1;
+            jumps = 0;
+            lastAcceleration = 0;
+            lastJumpTime = 0;
+            
+            workoutScreen.classList.remove('active');
+            setupScreen.classList.add('active');
+            
+            sensorStatus.classList.remove('active');
+            sensorStatus.textContent = '⏳ Attivazione sensori...';
+            motionBar.style.width = '0%';
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Prevent zoom
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('dblclick', e => e.preventDefault());
+    </script>
+</body>
+</html>
